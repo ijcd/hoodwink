@@ -1,14 +1,26 @@
 # A sample Guardfile
 # More info at https://github.com/guard/guard#readme
 
-guard 'rspec', :version => 2 do
+#rubies = %w[
+#   1.8.6
+#   1.8.7
+#   1.9.2
+#   ree
+#   jruby
+#].map { |ruby| "#{ruby}@webmock" }
+
+rspec_options = {
+  # :rvm          => rubies,
+  :all_on_start => true,
+  :notification => false,
+  :cli          => '--color', #"--color --format nested --fail-fast --drb"
+  :version      => 2
+}
+
+guard 'rspec', rspec_options do
   watch(%r{^spec/.+_spec\.rb$})
-  watch(%r{^lib/(.+)\.rb$})     { |m| "spec/lib/#{m[1]}_spec.rb" }
+  watch(%r{^lib/(.+)\.rb$})     { "spec" } #{ |m| "spec/lib/#{m[1]}_spec.rb" }
   watch('spec/spec_helper.rb')  { "spec" }
 
   watch(%r{^spec/support/(.+)\.rb$})                  { "spec" }
-
-  # Capybara request specs
-  watch(%r{^app/views/(.+)/.*\.(erb|haml)$})          { |m| "spec/requests/#{m[1]}_spec.rb" }
 end
-

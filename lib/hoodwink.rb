@@ -1,5 +1,6 @@
-require "hoodwink/version"
+require "addressable/uri"
+require "webmock"
 
-module Hoodwink
-  # Your code goes here...
-end
+require "hoodwink/version"
+require "hoodwink/resource_responder"
+require "hoodwink/hoodwink"

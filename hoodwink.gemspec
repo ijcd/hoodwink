@@ -20,7 +20,10 @@ Gem::Specification.new do |s|
 
   # specify any dependencies here; for example:
   s.add_development_dependency "rspec"
+  s.add_development_dependency "wrong"
   s.add_development_dependency "guard-rspec"
+  s.add_development_dependency "activeresource"
 
-  # s.add_runtime_dependency "rest-client"
+  s.add_runtime_dependency "webmock"
+  s.add_runtime_dependency "addressable", '~> 2.2', '> 2.2.5'
 end
