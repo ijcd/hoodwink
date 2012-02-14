@@ -1,17 +1,18 @@
 module Hoodwink
-
   class ResourceResponder
     attr_reader :resource_path
     attr_reader :resource_name
+    attr_reader :resource_factory
 
     SUPPORTED_FORMATS = {
       "xml" => "application/xml",
       "json" => "application/json"
     }
     
-    def initialize(resource_path)
+    def initialize(resource_path, resource_factory)
       @resource_path = resource_path
       @resource_name = %r{/(.*)}.match(resource_path)[1]
+      @resource_factory = resource_factory
     end
 
     # GET    "/fish.json",   {}, [@fish, @fish]
@@ -20,8 +21,8 @@ module Hoodwink
     # PUT    "/fish/1.json", {}, nil, 204
     # DELETE "/fish/1.json", {}, nil, 200
     def response_for(request)
-      onefish_json = %[{"fish":{"id":1}}]
-      twofish_json = %[{"fish":[{"id":1},{"id":2}]}]
+      onefish_json = @resource_factory.create.to_json(:root => @resource_name.singularize)
+      twofish_json = (1..3).map{@resource_factory.create}.to_json(:root => @resource_name.pluralize)
 
       collection_re = %r{#{resource_path}\.(?<format>.*)}
       resource_re   = %r{#{resource_path}/(?<id>[^.]+).(?<format>.*)}

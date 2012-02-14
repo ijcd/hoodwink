@@ -23,14 +23,26 @@ module Hoodwink
     WebMock.reset!
   end
 
-  def self.mock_resource(resource_url, *formats)
+  def self.mock_resource(resource_url)
     mocks << resource_url
 
-    # create or find resource responder
+    FactoryGirl.define do
+      factory :fish do
+        sequence(:id)
+        color { %w{red blue green yellow}.sample }
+      end
+    end rescue nil
+
+    # create a resource factory
+    factory = ResourceFactory.new("fish") do
+      FactoryGirl.build(:fish)
+    end
+
+    # create a resource responder
     resource_uri = Addressable::URI.parse(resource_url)
     resource_path = resource_uri.path
     resource_host = resource_uri.host
-    responder = ResourceResponder.new(resource_uri.path)
+    responder = ResourceResponder.new(resource_uri.path, factory)
 
     # wire requests to the responder
     ResourceResponder::SUPPORTED_FORMATS.each do |format, mimetype|
