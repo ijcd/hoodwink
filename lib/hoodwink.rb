@@ -9,7 +9,6 @@ require "hoodwink/version"
 module Hoodwink
 
   autoload :RequestInterceptor, "hoodwink/request_interceptor"
-  autoload :ResourceFactory,    "hoodwink/resource_factory"
   autoload :ResourceResponder,  "hoodwink/resource_responder"
   autoload :DataStore,          "hoodwink/data_store"
   

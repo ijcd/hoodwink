@@ -4,11 +4,15 @@ require 'active_resource'
 
 describe Hoodwink do
 
-  describe "a mocked resource" do
-    before(:all) { class Fish < ActiveResource::Base; self.site = "http://localhost.localdomain/" ; end }
-    before(:each) { Hoodwink.mock_resource "http://localhost.localdomain/fish" }
+  describe "when mocking ActiveResource" do
+    before(:all) { 
+      class Fish < ActiveResource::Base; self.site = "http://localhost.localdomain/" ; end 
+    }
+    before(:each) { 
+      Hoodwink.mock_resource "http://localhost.localdomain/fish" 
+    }
 
-    it "should respond to ActiveResrouce requests" do
+    it "should work with ActiveResrouce requests" do
       Fish.find(:all)
       Fish.find(:all, :params => {:color => "Blue"})
       Fish.find(1)

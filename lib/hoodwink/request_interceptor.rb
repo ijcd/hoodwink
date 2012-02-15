@@ -28,8 +28,6 @@ module Hoodwink
 
       # create a resource responder
       resource_uri = URI.parse(resource_url)
-      resource_path = resource_uri.path
-      resource_host = resource_uri.host
       responder = ResourceResponder.new(resource_uri.path, datastore)
 
       # store the responder
@@ -37,42 +35,47 @@ module Hoodwink
 
       # wire requests to the responder
       ResourceResponder::SUPPORTED_FORMATS.each do |format, mimetype|
-
-        collection_re = %r{^http(s)?://#{resource_host}#{resource_path}.#{format}}
-        resource_re   = %r{^http(s)?://#{resource_host}#{resource_path}/([^.]+).#{format}}
-
-        # INDEX
-        # mock.get    "/fish.json", {}, [@fish, @fish]
-        stub_request(:get, collection_re)
-          .with(:headers => {'Accept'=>mimetype})
-          .to_return {|request| responder.response_for(request) }
-        
-        # POST
-        # mock.post   "/fish.json",   {}, @fish, 201, "Location" => "/fish/1.json"
-        stub_request(:post, collection_re)
-          .with(:headers => {'Content-Type'=>mimetype})
-          .to_return {|request| responder.response_for(request) }
-
-        # GET
-        # mock.get    "/fish/1.json", {}, @fish
-        stub_request(:get, resource_re)
-          .with(:headers => {'Accept'=>mimetype})
-          .to_return {|request| responder.response_for(request) }
-
-        # PUT
-        # mock.put    "/fish/1.json", {}, nil, 204
-        stub_request(:put, resource_re)
-          .with(:headers => {'Content-Type'=>mimetype})
-          .to_return {|request| responder.response_for(request) }
-
-        # DELETE
-        # mock.delete "/fish/1.json", {}, nil, 200
-        stub_request(:delete, resource_re)
-          .with(:headers => {'Accept'=>mimetype})
-          .to_return {|request| responder.response_for(request) }
-
+        stub_request_for(responder, resource_uri, "*/*",    ".#{format}")
+        stub_request_for(responder, resource_uri, mimetype, ".#{format}")
+        stub_request_for(responder, resource_uri, mimetype, "")
       end
+    end
 
+    private
+
+    def stub_request_for(responder, resource_uri, mimetype, extension)
+      resource_path = resource_uri.path
+      resource_host = resource_uri.host
+      collection_re = %r{^http(s)?://#{resource_host}#{resource_path}#{extension}}
+      resource_re   = %r{^http(s)?://#{resource_host}#{resource_path}/([^.]+)#{extension}}
+
+      content_type_hash = mimetype.empty?
+
+      # INDEX
+      # mock.get    "/fish.json", {}, [@fish, @fish]
+      stub_request(:get, collection_re)
+        .to_return {|request| responder.response_for(request) }
+      
+      # POST
+      # mock.post   "/fish.json",   {}, @fish, 201, "Location" => "/fish/1.json"
+      stub_request(:post, collection_re)
+        .to_return {|request| responder.response_for(request) }
+
+      # GET
+      # mock.get    "/fish/1.json", {}, @fish
+      stub_request(:get, resource_re)
+        .to_return {|request| responder.response_for(request) }
+
+      # PUT
+      # mock.put    "/fish/1.json", {}, nil, 204
+      stub_request(:put, resource_re)
+        .to_return {|request| responder.response_for(request) }
+
+      # DELETE
+      # mock.delete "/fish/1.json", {}, nil, 200
+      stub_request(:delete, resource_re)
+        .to_return {|request| responder.response_for(request) }
     end
   end
+
 end
