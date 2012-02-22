@@ -1,6 +1,13 @@
 module Hoodwink
   class UnableToHandleRequest < StandardError ; end
 
+  class Resource
+    attr_accessor :id
+    def initialize(id)
+      @id = id
+    end
+  end
+
   class ResourceResponder
     attr_reader :resource_path
     attr_reader :resource_name
@@ -55,6 +62,10 @@ module Hoodwink
       url_format || SUPPORTED_FORMATS[headers["Accept"]]
     end
 
+    def parse_resource(request, request_format)
+      Resource.new(1)
+    end
+
     # GET    "/fish.json",   {}, [@fish, @fish]
     # POST   "/fish.json",   {}, @fish, 201, "Location" => "/fish/1.json"
     # GET    "/fish/1.json", {}, @fish
@@ -67,12 +78,12 @@ module Hoodwink
 
       # collection requests
       if match = (path.match(collection_re))
-        request_format = match[:format]
+        request_format = match[:format] # TODO: what about content-type?
         response_for_collection(request, request_format)
 
       # resource request
       elsif match = (path.to_s.match(resource_re))
-        request_format = match[:format]
+        request_format = match[:format] # TODO: what about content-type?
         resource_id = match[:id]
         response_for_resource(request, request_format, resource_id)
 
@@ -81,6 +92,8 @@ module Hoodwink
       end
     end
 
+    # TODO: move request and many methods dealing with it out into EnhancedRequest
+    # TODO: move resource and many methods dealing with it out into EnhancedResource
     def response_for_collection(request, request_format)
       case request.method
       when :get
@@ -88,10 +101,12 @@ module Hoodwink
         response_body = response_body_for_all(response_format)
         response_for_get(response_body, response_format)
       when :post
-        resource_id = 1 # TODO
-        resource_location = "#{resource_path}/#{resource_id}.#{request_format}"
+        resource = parse_resource(request, request_format)
+        resource_location = "#{resource_path}/#{resource.id}.#{request_format}"
+        datastore.create(resource)
         response_format = response_format_for_nonget(request.headers, request_format)
-        response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+        response_for_nonget(request, request_format, response_format, resource_location, resource)
+
       else
         raise UnableToHandleRequest.new
       end
@@ -104,15 +119,17 @@ module Hoodwink
         response_body = response_body_for_id(response_format, resource_id)
         response_for_get(response_body, response_format)
       when :put
-        resource_id = 1 # TODO
+        resource = parse_resource(request, request_format)
         resource_location = "#{resource_path}/#{resource_id}.#{request_format}"
+        datastore.update(resource)
         response_format = response_format_for_nonget(request.headers, request_format)
-        response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+        response_for_nonget(request, request_format, response_format, resource_location, resource)
       when :delete
-        resource_id = 1 # TODO
+        resource = parse_resource(request, request_format)
         resource_location = resource_path
+        datastore.delete(resource)
         response_format = response_format_for_nonget(request.headers, request_format)
-        response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+        response_for_nonget(request, request_format, response_format, resource_location, resource)
       else
         raise UnableToHandleRequest.new
       end
@@ -127,11 +144,11 @@ module Hoodwink
 
     # POST /cars   Content-Type:xml -> 302, else normal 201 response (this is what Rails 3.2 does)
     # PUT  /cars/1 Content-Type:xml -> 302, else normal 204 response (this is what Rails 3.2 does)
-    def response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+    def response_for_nonget(request, request_format, response_format, resource_location, resource)
       if request_format || (request.method == :delete && request.headers["Accept"])
         headers = { "Location" => resource_location }
         headers.merge!("Content-Type" => MIMETYPES_BY_FORMAT[response_format]) if request.method != :delete
-        { :body => response_body_for_id(response_format, resource_id), 
+        { :body => response_body_for_id(response_format, resource.id), 
           :status => (request.method == :post) ? 201 : 204,
           :headers => headers
         }

@@ -35,5 +35,15 @@ module Hoodwink
     def find_all(name)
       model(name).all
     end
+
+    def create(*args)
+    end
+
+    def update(*args)
+    end
+
+    def delete(*args)
+    end
+
   end
 end
