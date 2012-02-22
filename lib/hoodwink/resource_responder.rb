@@ -1,14 +1,19 @@
 module Hoodwink
+  class UnableToHandleRequest < StandardError ; end
+
   class ResourceResponder
     attr_reader :resource_path
     attr_reader :resource_name
     attr_reader :datastore
 
     SUPPORTED_FORMATS = {
-      "xml" => "application/xml",
-      "json" => "application/json"
+      "application/xml"  => "xml",
+      "application/json" => "json",
+      "text/html"        => "html"
     }
-    
+
+    MIMETYPES_BY_FORMAT = SUPPORTED_FORMATS.invert
+
     def initialize(resource_path, datastore)
       @resource_path = resource_path
       @resource_name = %r{/(.*)}.match(resource_path)[1]
@@ -20,11 +25,34 @@ module Hoodwink
     end
 
     def response_body_for_all(format)
-      format_as(format, @resource_name.pluralize, @datastore.find_all(@resource_name))
+      return body_for_html if format == "html"
+      data = @datastore.find_all(@resource_name)
+      format_as(format, @resource_name.pluralize, data)
     end
 
     def response_body_for_id(format, id)
+      return body_for_html if format == "html"
       format_as(format, @resource_name.singularize, @datastore.find(@resource_name, id))
+    end
+
+    def body_for_html
+      %{<html><body>Hi from hoodwink! Rails would normally return HTML here...</body></html>}
+    end
+
+    def body_for_redirect(url)
+      %{<html><body>You are being <a href="#{url}">redirected</a>.</body></html>}
+    end
+
+    # GET requests to Rails prefer url_format to Accept header
+    # Rails seems to default to HTML
+    def response_format_for_get(headers, url_format)
+      url_format || SUPPORTED_FORMATS[headers["Accept"]] || "html"
+    end
+
+    # POST/PUT requests to Rails prefer Content-Type header to url_format
+    # Rails seems to default to HTML
+    def response_format_for_nonget(headers, url_format)
+      url_format || SUPPORTED_FORMATS[headers["Accept"]]
     end
 
     # GET    "/fish.json",   {}, [@fish, @fish]
@@ -34,36 +62,86 @@ module Hoodwink
     # DELETE "/fish/1.json", {}, nil, 200
     def response_for(request)
       path = request.uri.path
-      collection_re = %r{#{resource_path}\.(?<format>.*)}
-      resource_re   = %r{#{resource_path}/(?<id>[^.]+).(?<format>.*)}
+      collection_re = %r{^#{resource_path}(\.(?<format>.*))?$}
+      resource_re   = %r{^#{resource_path}/(?<id>[^.]+)(.(?<format>.*))?$}
 
       # collection requests
       if match = (path.match(collection_re))
-        case request.method
-        when :get
-          {:body => response_body_for_all(match[:format])}
-        when :post
-          resource_id = 1
-          resource_location = "#{resource_path}/#{resource_id}.#{match[:format]}"
-          { :body => response_body_for_id(match[:format], resource_id), 
-            :status => 201, 
-            :headers => {"Location" => resource_location}
-          }
-        end
+        request_format = match[:format]
+        response_for_collection(request, request_format)
 
-        # resource request
+      # resource request
       elsif match = (path.to_s.match(resource_re))
-        case request.method
-        when :get
-          {:body => response_body_for_id(match[:format], match[:id])}
-        when :put
-          {:body => nil, :status => 204}
-        when :delete
-          {:body => nil}
-        end
+        request_format = match[:format]
+        resource_id = match[:id]
+        response_for_resource(request, request_format, resource_id)
 
       else
-        raise "Unable to respond to request #{request}"
+        raise UnableToHandleRequest.new
+      end
+    end
+
+    def response_for_collection(request, request_format)
+      case request.method
+      when :get
+        response_format = response_format_for_get(request.headers, request_format)
+        response_body = response_body_for_all(response_format)
+        response_for_get(response_body, response_format)
+      when :post
+        resource_id = 1 # TODO
+        resource_location = "#{resource_path}/#{resource_id}.#{request_format}"
+        response_format = response_format_for_nonget(request.headers, request_format)
+        response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+      else
+        raise UnableToHandleRequest.new
+      end
+    end
+
+    def response_for_resource(request, request_format, resource_id)
+      case request.method
+      when :get
+        response_format = response_format_for_get(request.headers, request_format)     
+        response_body = response_body_for_id(response_format, resource_id)
+        response_for_get(response_body, response_format)
+      when :put
+        resource_id = 1 # TODO
+        resource_location = "#{resource_path}/#{resource_id}.#{request_format}"
+        response_format = response_format_for_nonget(request.headers, request_format)
+        response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+      when :delete
+        resource_id = 1 # TODO
+        resource_location = resource_path
+        response_format = response_format_for_nonget(request.headers, request_format)
+        response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+      else
+        raise UnableToHandleRequest.new
+      end
+    end
+
+    def response_for_get(response_body, response_format)
+      { :body    => response_body,
+        :status  => 200,
+        :headers => {"Content-Type" => MIMETYPES_BY_FORMAT[response_format]}
+      }
+    end
+
+    # POST /cars   Content-Type:xml -> 302, else normal 201 response (this is what Rails 3.2 does)
+    # PUT  /cars/1 Content-Type:xml -> 302, else normal 204 response (this is what Rails 3.2 does)
+    def response_for_nonget(request, request_format, response_format, resource_location, resource_id)
+      if request_format || (request.method == :delete && request.headers["Accept"])
+        headers = { "Location" => resource_location }
+        headers.merge!("Content-Type" => MIMETYPES_BY_FORMAT[response_format]) if request.method != :delete
+        { :body => response_body_for_id(response_format, resource_id), 
+          :status => (request.method == :post) ? 201 : 204,
+          :headers => headers
+        }
+      else
+        { :body => body_for_redirect(resource_location),
+          :status => 302,
+          :headers => { 
+            "Location" => resource_location
+          }
+        }
       end
     end
 

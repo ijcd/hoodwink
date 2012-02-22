@@ -13,7 +13,7 @@ rspec_options = {
   # :rvm          => rubies,
   :all_on_start => true,
   :notification => false,
-  :cli          => '--color', #"--color --format nested --fail-fast --drb"
+  :cli          => '--color --debug', #"--color --format nested --fail-fast --drb"
   :version      => 2
 }
 

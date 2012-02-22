@@ -24,8 +24,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency "guard-rspec"
   s.add_development_dependency "activeresource"
 
-  s.add_runtime_dependency "activesupport", "~> 3.1.0"
+  s.add_runtime_dependency "activesupport", "~> 3.0.0"
   s.add_runtime_dependency "webmock"
   s.add_runtime_dependency "factory_girl"
-  s.add_runtime_dependency "supermodel"
+  s.add_runtime_dependency "supermodel", "~> 0.1.6"
 end

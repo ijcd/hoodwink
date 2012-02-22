@@ -34,7 +34,7 @@ module Hoodwink
       responders[resource_url] = responder
 
       # wire requests to the responder
-      ResourceResponder::SUPPORTED_FORMATS.each do |format, mimetype|
+      ResourceResponder::SUPPORTED_FORMATS.each do |mimetype, format|
         stub_request_for(responder, resource_uri, "*/*",    ".#{format}")
         stub_request_for(responder, resource_uri, mimetype, ".#{format}")
         stub_request_for(responder, resource_uri, mimetype, "")

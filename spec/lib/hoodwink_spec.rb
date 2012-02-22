@@ -12,7 +12,7 @@ describe Hoodwink do
       Hoodwink.mock_resource "http://localhost.localdomain/fish" 
     }
 
-    it "should work with ActiveResrouce requests" do
+    it "should work with ActiveResource requests" do
       Fish.find(:all)
       Fish.find(:all, :params => {:color => "Blue"})
       Fish.find(1)
