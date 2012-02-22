@@ -103,7 +103,7 @@ module Hoodwink
       when :post
         resource = parse_resource(request, request_format)
         resource_location = "#{resource_path}/#{resource.id}.#{request_format}"
-        datastore.create(resource)
+        datastore.create("fish", {})
         response_format = response_format_for_nonget(request.headers, request_format)
         response_for_nonget(request, request_format, response_format, resource_location, resource)
 
@@ -121,13 +121,13 @@ module Hoodwink
       when :put
         resource = parse_resource(request, request_format)
         resource_location = "#{resource_path}/#{resource_id}.#{request_format}"
-        datastore.update(resource)
+        datastore.update("fish", {})
         response_format = response_format_for_nonget(request.headers, request_format)
         response_for_nonget(request, request_format, response_format, resource_location, resource)
       when :delete
         resource = parse_resource(request, request_format)
         resource_location = resource_path
-        datastore.delete(resource)
+        datastore.delete("fish", {})
         response_format = response_format_for_nonget(request.headers, request_format)
         response_for_nonget(request, request_format, response_format, resource_location, resource)
       else

@@ -1,6 +1,7 @@
 require File.join(File.dirname(__FILE__), '../../spec_helper.rb')
 
-describe Hoodwink do
+describe Hoodwink::RequestInterceptor do
+
   subject { Hoodwink::RequestInterceptor.instance }
 
   let(:fish_endpoint) { "http://localhost.localdomain/fish" }
