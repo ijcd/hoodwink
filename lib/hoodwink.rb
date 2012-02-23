@@ -12,6 +12,15 @@ module Hoodwink
   autoload :RequestInterceptor, "hoodwink/request_interceptor"
   autoload :ResourceResponder,  "hoodwink/resource_responder"
   autoload :DataStore,          "hoodwink/data_store"
+
+  # Generic Hoodwink exception class
+  class HoodwinkError < StandardError ; end
+
+  # Raised when Hoodwink cannot find record by given id
+  class RecordNotFound < HoodwinkError ; end
+
+  # Raised when Hoodwink receives a request it cannot handle
+  class UnableToHandleRequest < HoodwinkError ; end
   
   def self.interceptor
     RequestInterceptor.instance

@@ -1,5 +1,4 @@
 module Hoodwink
-  class UnableToHandleRequest < StandardError ; end
 
   class Resource
     attr_accessor :id
@@ -80,16 +79,16 @@ module Hoodwink
       if match = (path.match(collection_re))
         request_format = match[:format] # TODO: what about content-type?
         response_for_collection(request, request_format)
-
       # resource request
       elsif match = (path.to_s.match(resource_re))
         request_format = match[:format] # TODO: what about content-type?
         resource_id = match[:id]
         response_for_resource(request, request_format, resource_id)
-
       else
-        raise UnableToHandleRequest.new
+        raise UnableToHandleRequest, "Could not handle request for #{request.method} on #{path}"
       end
+    rescue RecordNotFound
+      response_for_404
     end
 
     # TODO: move request and many methods dealing with it out into EnhancedRequest
@@ -106,9 +105,8 @@ module Hoodwink
         datastore.create("fish", {})
         response_format = response_format_for_nonget(request.headers, request_format)
         response_for_nonget(request, request_format, response_format, resource_location, resource)
-
       else
-        raise UnableToHandleRequest.new
+        raise UnableToHandleRequest, "Could not handle request for #{request.method} on #{path}"
       end
     end
 
@@ -131,8 +129,14 @@ module Hoodwink
         response_format = response_format_for_nonget(request.headers, request_format)
         response_for_nonget(request, request_format, response_format, resource_location, resource)
       else
-        raise UnableToHandleRequest.new
+        raise UnableToHandleRequest, "Could not handle request for #{request.method} on #{path}"
       end
+    end
+
+    def response_for_404
+      { :body    => %{<html><body>404: Not Found</body></html>},
+        :status  => 404
+      }
     end
 
     def response_for_get(response_body, response_format)
@@ -155,9 +159,7 @@ module Hoodwink
       else
         { :body => body_for_redirect(resource_location),
           :status => 302,
-          :headers => { 
-            "Location" => resource_location
-          }
+          :headers => { "Location" => resource_location }
         }
       end
     end

@@ -10,10 +10,12 @@ describe Hoodwink do
     }
 
     before(:each) { 
-      Hoodwink.interceptor.datastore.clear
+      datastore.clear!
       Hoodwink.mock_resource "http://localhost.localdomain/fish"
-      Hoodwink.interceptor.datastore.create(:fish, :id => 1)
+      datastore.create(:fish, :id => 1)
     }
+
+    let(:datastore)  { Hoodwink.interceptor.datastore }
 
     it "should work with ActiveResource requests" do
       TestFish.find(:all)
@@ -53,7 +55,7 @@ describe Hoodwink do
         assert { TestFish === TestFish.find(1, :params => {:color => "Blue"}) }
       end
 
-      it "should respond to a PUT to a resource" do
+      it "should respond to a PUT" do
         assert { TestFish.find(1).save }
       end
 
