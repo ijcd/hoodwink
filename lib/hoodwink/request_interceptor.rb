@@ -24,11 +24,17 @@ module Hoodwink
       @datastore ||= DataStore.new
     end
 
-    def mock_resource(resource_url)
+    def mock_resource(resource_url, resource_name=nil)
+      # guess resource_name from url if not given
+      unless resource_name
+        resource_uri = URI.parse(resource_url)        
+        m = %r{^.*(/(?<resource_name>.*?))$}.match(resource_uri.path)
+        resource_name = m[:resource_name]
+      end
 
+      # TODO: figure our plural/singular for resource_name
       # create a resource responder
-      resource_uri = URI.parse(resource_url)
-      responder = ResourceResponder.new(resource_uri.path, datastore)
+      responder = ResourceResponder.new(resource_uri.path, resource_name.singularize, datastore)
 
       # store the responder
       responders[resource_url] = responder
@@ -46,8 +52,12 @@ module Hoodwink
     def stub_request_for(responder, resource_uri, mimetype, extension)
       resource_path = resource_uri.path
       resource_host = resource_uri.host
-      collection_re = %r{^http(s)?://#{resource_host}#{resource_path}#{extension}}
-      resource_re   = %r{^http(s)?://#{resource_host}#{resource_path}/([^.]+)#{extension}}
+      resource_port = resource_uri.port.nil? ? "": ":#{resource_uri.port}"
+      # TODO: add tests for username/password
+      # TODO: add tests for port
+      # TODO: add tests for port :80 same as nil
+      collection_re = %r{^http(s)?://(.*@)?#{resource_host}#{resource_port}#{resource_path}#{extension}}
+      resource_re   = %r{^http(s)?://(.*@)?#{resource_host}#{resource_port}#{resource_path}/([^.]+)#{extension}}
 
       content_type_hash = mimetype.empty?
 

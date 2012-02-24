@@ -2,9 +2,19 @@ require File.join(File.dirname(__FILE__), '../../spec_helper.rb')
 
 describe Hoodwink do
   subject { 
-    datastore = double("datastore", :find_all => [{},{},{}], :find => {}, :create => {}, :update => {}, :delete => {})
-    Hoodwink::ResourceResponder.new("/fowl", datastore)
+    samples = (1..3).map {|i| Hoodwink::Resource.new(i) }
+    sample = samples.first
+    datastore = double("datastore", 
+                       :find_all => samples,
+                       :find => sample,
+                       :create => sample,
+                       :update => sample,
+                       :delete => {})
+    Hoodwink::ResourceResponder.new("/fowl", :fowl, datastore)
   }
+
+  let(:body_xml)  { %{<fowl><color>red</color></fowl>} }
+  let(:body_json) { %{{"fowl":{"color":"red"}}} }
 
   describe "#format_as" do
     it "should format as json" do
@@ -60,7 +70,7 @@ describe Hoodwink do
 
     let(:response) { subject.response_for(request) }
 
-    #                                  accept/
+    #                                            accept/
     #              method   resource   extension content-type ==>    code content-type        location
     test_cases = [
                   [:get,    :index,    nil,      nil,                200, "text/html",        nil],
@@ -128,11 +138,13 @@ describe Hoodwink do
           case method
           when :post, :put
             headers = request_content_type.nil? ? {} : {"Content-Type" => request_content_type}
+            body = (Hoodwink::ResourceResponder::SUPPORTED_FORMATS[request_content_type] == "xml") ? body_xml : body_json
           else
             headers = request_content_type.nil? ? {} : {"Accept" => request_content_type}
+            body = nil
           end
 
-          Request.new(method, URI.parse(url), nil, headers)
+          Request.new(method, URI.parse(url), body, headers)
         }
 
         it "should return status #{response_code}" do
@@ -174,13 +186,13 @@ describe Hoodwink do
           end unless (extension.nil? && request_content_type.nil?)
 
         when [:put, :resource]
-          it "should call datastore.find and datastore.save at some point" do
+          it "should call datastore.update at some point" do
             subject.datastore.should_receive(:update)
             response
           end
 
         when [:delete, :resource]
-          it "should call the datastore.find and datastore.delete at some point" do
+          it "should call datastore.delete at some point" do
             subject.datastore.should_receive(:delete)
             response
           end

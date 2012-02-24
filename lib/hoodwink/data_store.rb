@@ -27,47 +27,48 @@ module Hoodwink
 
     # lookup the SuperModel, retry after creating if not found
     def model_for(sym)
-      name = sym.to_s.classify
-      if klass = @models[name]
+      model_name = sym.to_s.classify
+      if klass = @models[model_name]
         klass
       else
-        klass = "Hoodwink::Models::#{name}".constantize
+        klass = "Hoodwink::Models::#{model_name}".constantize
         klass.delete_all # clear out this model since it's the first time we've seen it.
-        @models[name] = klass
+        @models[model_name] = klass
       end
     rescue NameError
       klass = Class.new(SuperModel::Base)
-      Hoodwink::Models.const_set(name, klass)
+      Hoodwink::Models.const_set(model_name, klass)
       retry
     end
     
-    def find(name, id)
+    def find(model_name, id)
       id = Integer(id) rescue id
-      model_for(name).find(id)
+      model_for(model_name).find(id)
     rescue SuperModel::UnknownRecord => e
       raise RecordNotFound, e.message
     end
 
-    def find_all(name)
-      model_for(name).all
+    def find_all(model_name)
+      model_for(model_name).all
     end
 
-    def create(name, params={})
+    #define model_name unless model_exists(model_name)
+    #records = records.kind_of?(Array) ? records.map {|r| r.symbolize_keys} : records.symbolize_keys!
+    def create(model_name, params={})
       params.stringify_keys!
-      model_for(name).create(params)
+      model_for(model_name).create(params)
     end
 
-    def create!(name, params={})
+    def create!(model_name, params={})
       params.stringify_keys!
-      model_for(name).create!(params)
+      model_for(model_name).create!(params)
     end
 
-    def update(name, params={})
+    def update(model_name, model_id, params={})
       params.stringify_keys!
     end
 
-    def delete(name, params={})
-      params.stringify_keys!
+    def delete(model_name, model_id)
     end
 
     def clear!
@@ -76,9 +77,9 @@ module Hoodwink
 
     def inspect
       @buf = []
-      @models.each do |name, model|
+      @models.each do |model_name, model|
         models = model.all
-        @buf << "#{name} (#{models.count}):"
+        @buf << "#{model_name} (#{models.count}):"
         models.each do |m|
           @buf << "  #{m.inspect}"
         end

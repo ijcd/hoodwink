@@ -22,10 +22,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rspec"
   s.add_development_dependency "wrong"
   s.add_development_dependency "guard-rspec"
-  s.add_development_dependency "activeresource"
 
-  s.add_runtime_dependency "activesupport", "~> 3.0.0"
+  s.add_runtime_dependency "activesupport", "> 3.0.0"
+  s.add_runtime_dependency "activeresource"
   s.add_runtime_dependency "webmock"
   s.add_runtime_dependency "factory_girl"
-  s.add_runtime_dependency "supermodel", "~> 0.1.6"
+
+  # TODO: fix supermodel dependency on activemodel ~> 3.0.0 so we can move this to gemspec
+  #s.add_runtime_dependency "supermodel", "~> 0.1.6"
 end
