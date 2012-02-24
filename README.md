@@ -1,3 +1,34 @@
+# Hoodwink
+
+Hoodwink is a tool for testing web applications. It was heavily
+inspired by Dupe, but takes a different approach. Hoodwink uses
+SuperModel for the database backend, and WebMock for the HTTP
+interception layer. This allows it to work without ActiveResource,
+though it works perfectly fine with it as well. Hoodwink also
+leverages object factories like FactoryGirl, rather than create it's
+own thing.
+
+Features:
+
+* mocking of REST endpoints (using WebMock)
+* support for json (as well as xml)
+* database simulation to allow POST then GET to work
+* integration with third-party object factories (FactoryGirl)
+
+Build your service-oriented app by mocking out the services first,
+then turn off Hoodwink and hit the actual services. This makes testing
+and development much faster, especially if you are dealing with a
+slower backend service.
+
+## Installation
+
+If you want to install this for use in something other than a rails project, simply: 
+
+    gem install hoodwink
+
+## Creating resources
+
+
 ## Development
 
 In order to work on Hoodwink you first need to fork and clone the repo.
