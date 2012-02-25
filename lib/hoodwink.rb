@@ -32,12 +32,14 @@ module Hoodwink
     interceptor.datastore
   end
 
-  def self.allow_net_connect!
-    interceptor.allow_net_connect!
+  # TODO: can we allow/disallow from a regexp?
+  def self.allow_net_connect!(*args)
+    interceptor.allow_net_connect!(*args)
   end
 
-  def self.disable_net_connect!
-    interceptor.disable_net_connect!
+  # TODO: WebMock.disable_net_connect!(:allow => "www.example.org:8080")
+  def self.disable_net_connect!(*args)
+    interceptor.disable_net_connect!(*args)
   end
 
   def self.reset
