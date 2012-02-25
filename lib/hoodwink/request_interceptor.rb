@@ -57,55 +57,34 @@ module Hoodwink
       # TODO: add tests for username/password
       # TODO: add tests for port
       # TODO: add tests for port :80 same as nil
-      collection_re = %r{ ^                       # anchored
-                          https?://               # scheme (http/https)
-                          (.*@)?                  # optional username/password
-                          #{resource_host}        # host
-                          #{resource_port}        # port
-                          #{resource_path}        # path
-                          #{extension}            # extension
-                          (\?(?<params>.*))?      # optional params
-                          $                       # anchored
-                        }x
-
-      resource_re =   %r{ ^                       # anchored
-                          https?://               # scheme (http/https)
-                          (.*@)?                  # optional username/password
-                          #{resource_host}        # host
-                          #{resource_port}        # port
-                          #{resource_path}        # path
-                          /([^./]+)               # id (no dots or forward slashes)
-                          #{extension}            # extension
-                          (\?(?<params>.*))?      # optional params
-                          $                       # anchored
-                        }x
+      collection_re = %r{^https?://(.*@)?#{resource_host}#{resource_port}#{resource_path}#{extension}(\?(?<params>.*))?$} 
+      resource_re =   %r{^https?://(.*@)?#{resource_host}#{resource_port}#{resource_path}/([^./]+)#{extension}(\?(?<params>.*))?$}
 
       content_type_hash = mimetype.empty?
 
+      response = Proc.new do |request| 
+        responder.response_for(request).tap {|r| pp r}
+      end
+
       # INDEX
       # mock.get    "/fish.json", {}, [@fish, @fish]
-      stub_request(:get, collection_re)
-        .to_return {|request| responder.response_for(request) }
+      stub_request(:get, collection_re).to_return(response)
       
       # POST
       # mock.post   "/fish.json",   {}, @fish, 201, "Location" => "/fish/1.json"
-      stub_request(:post, collection_re)
-        .to_return {|request| responder.response_for(request) }
+      stub_request(:post, collection_re).to_return(response)
 
       # GET
       # mock.get    "/fish/1.json", {}, @fish
-      stub_request(:get, resource_re)
-        .to_return {|request| responder.response_for(request) }
+      stub_request(:get, resource_re).to_return(response)
 
       # PUT
       # mock.put    "/fish/1.json", {}, nil, 204
-      stub_request(:put, resource_re)
-        .to_return {|request| responder.response_for(request) }
+      stub_request(:put, resource_re).to_return(response)
 
       # DELETE
       # mock.delete "/fish/1.json", {}, nil, 200
-      stub_request(:delete, resource_re)
-        .to_return {|request| responder.response_for(request) }
+      stub_request(:delete, resource_re).to_return(response)
     end
   end
 
