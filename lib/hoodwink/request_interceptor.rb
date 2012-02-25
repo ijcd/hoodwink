@@ -53,11 +53,32 @@ module Hoodwink
       resource_path = resource_uri.path
       resource_host = resource_uri.host
       resource_port = resource_uri.port.nil? ? "": ":#{resource_uri.port}"
+
       # TODO: add tests for username/password
       # TODO: add tests for port
       # TODO: add tests for port :80 same as nil
-      collection_re = %r{^http(s)?://(.*@)?#{resource_host}#{resource_port}#{resource_path}#{extension}}
-      resource_re   = %r{^http(s)?://(.*@)?#{resource_host}#{resource_port}#{resource_path}/([^.]+)#{extension}}
+      collection_re = %r{ ^                       # anchored
+                          https?://               # scheme (http/https)
+                          (.*@)?                  # optional username/password
+                          #{resource_host}        # host
+                          #{resource_port}        # port
+                          #{resource_path}        # path
+                          #{extension}            # extension
+                          (\?(?<params>.*))?      # optional params
+                          $                       # anchored
+                        }x
+
+      resource_re =   %r{ ^                       # anchored
+                          https?://               # scheme (http/https)
+                          (.*@)?                  # optional username/password
+                          #{resource_host}        # host
+                          #{resource_port}        # port
+                          #{resource_path}        # path
+                          /([^./]+)               # id (no dots or forward slashes)
+                          #{extension}            # extension
+                          (\?(?<params>.*))?      # optional params
+                          $                       # anchored
+                        }x
 
       content_type_hash = mimetype.empty?
 

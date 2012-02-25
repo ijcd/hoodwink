@@ -87,6 +87,38 @@ describe Hoodwink::RequestInterceptor do
         http.delete("/fish/1#{extension}", headers)
       end
 
+      ## longer URLs ##
+
+      it "should NOT intercept index GET requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
+        responder.should_not_receive(:response_for)
+        headers = mimetype.nil? ? {} : {"Accept" => mimetype}
+        expect { http.get("/fish#{extension}/foo", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
+      end unless extension
+
+      it "should NOT intercept index POST requests with #{mimetype} for longer urls that submatch" do
+        responder.should_not_receive(:response_for)
+        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
+        expect { http.post("/fish#{extension}/foo", "", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
+      end
+
+      it "should NOT intercept resource GET requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
+        responder.should_not_receive(:response_for)
+        headers = mimetype.nil? ? {} : {"Accept" => mimetype}
+        expect { http.get("/fish/1#{extension}/foo", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
+      end
+
+      it "should NOT intercept resource PUT requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
+        responder.should_not_receive(:response_for)
+        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
+        expect { http.put("/fish/1#{extension}/foo", "", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
+      end
+
+      it "should NOT intercept resource DELETE requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
+        responder.should_not_receive(:response_for)
+        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
+        expect { http.delete("/fish/1#{extension}/foo", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
+      end
+
     end
 
     it_behaves_like "a mocked resource", nil,                ".json"
