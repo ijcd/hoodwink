@@ -63,7 +63,7 @@ module Hoodwink
       content_type_hash = mimetype.empty?
 
       response = Proc.new do |request| 
-        responder.response_for(request).tap {|r| pp r}
+        responder.response_for(request)#.tap {|r| pp r}
       end
 
       # INDEX

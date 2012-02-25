@@ -37,12 +37,12 @@ describe Hoodwink do
     end
 
     it "should format data as json" do
-      subject.should_receive(:format_as).with("json", "fowls", anything()).once
+      subject.should_receive(:format_as).with("json", "fowl", anything()).once
       subject.response_body_for_all("json")
     end
 
     it "should format data as xml" do
-      subject.should_receive(:format_as).with("xml", "fowls", anything()).once
+      subject.should_receive(:format_as).with("xml", "fowl", anything()).once
       subject.response_body_for_all("xml")
     end
   end

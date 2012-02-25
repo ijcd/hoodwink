@@ -23,10 +23,11 @@ module Hoodwink
       data.send("to_#{format}", :root => root)
     end
 
+    # TODO: test with AR that expects and doesn't expect roots
     def response_body_for_all(format)
       return body_for_html if format == "html"
       data = @datastore.find_all(@resource_name)
-      format_as(format, @resource_name.pluralize, data)
+      format_as(format, @resource_name.singularize, data)
     end
 
     def response_body_for_id(format, id)
