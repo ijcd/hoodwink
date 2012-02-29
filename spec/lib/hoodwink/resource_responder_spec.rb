@@ -66,7 +66,7 @@ describe Hoodwink do
 
   # TODO: setup tests to run against actual Rails/ActiveResource to compare values
   describe "#response_for" do
-    before(:all) { Request = Struct.new("Request", :method, :uri, :body, :headers) }
+    before(:all) { RawRequest = Struct.new("Request", :method, :uri, :body, :headers) }
 
     let(:response) { subject.response_for(request) }
 
@@ -138,13 +138,13 @@ describe Hoodwink do
           case method
           when :post, :put
             headers = request_content_type.nil? ? {} : {"Content-Type" => request_content_type}
-            body = (Hoodwink::ResourceResponder::SUPPORTED_FORMATS[request_content_type] == "xml") ? body_xml : body_json
+            body = (Hoodwink::SUPPORTED_FORMATS[request_content_type] == "xml") ? body_xml : body_json
           else
             headers = request_content_type.nil? ? {} : {"Accept" => request_content_type}
             body = nil
           end
 
-          Request.new(method, URI.parse(url), body, headers)
+          RawRequest.new(method, URI.parse(url), body, headers)
         }
 
         it "should return status #{response_code}" do

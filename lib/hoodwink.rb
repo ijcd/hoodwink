@@ -13,6 +13,15 @@ module Hoodwink
   autoload :ResourceResponder,  "hoodwink/resource_responder"
   autoload :DataStore,          "hoodwink/data_store"
   autoload :Resource,           "hoodwink/resource"
+  autoload :Request,            "hoodwink/request"
+
+  SUPPORTED_FORMATS = {
+    "application/xml"  => "xml",
+    "application/json" => "json",
+    "text/html"        => "html"
+  }
+
+  MIMETYPES_BY_FORMAT = SUPPORTED_FORMATS.invert
 
   # Generic Hoodwink exception class
   class HoodwinkError < StandardError ; end
@@ -45,8 +54,8 @@ module Hoodwink
     interceptor.reset
   end
 
-  def self.mock_resource(resource_url)
-    interceptor.mock_resource(resource_url)
+  def self.mock_resource(resource_url, resource_name=nil, &block)
+    interceptor.mock_resource(resource_url, resource_name, &block)
   end
 
   def self.create(model_name, records={})
