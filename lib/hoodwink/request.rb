@@ -44,6 +44,12 @@ module Hoodwink
       path.match(@resource_re)
     end
 
+    def request_type
+      return :collection if collection_request?
+      return :resource if resource_request?
+      nil
+    end
+
     def body_content_type
       SUPPORTED_FORMATS[headers["Content-Type"]] || url_format || nil
     end

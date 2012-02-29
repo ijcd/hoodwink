@@ -30,40 +30,6 @@ describe Hoodwink do
     end
   end
 
-  describe "#response_body_for_all" do
-    it "should use @datastore.find_all" do
-      subject.datastore.should_receive(:find_all).with("fowl").once
-      subject.response_body_for_all("json")
-    end
-
-    it "should format data as json" do
-      subject.should_receive(:format_as).with("json", "fowl", anything()).once
-      subject.response_body_for_all("json")
-    end
-
-    it "should format data as xml" do
-      subject.should_receive(:format_as).with("xml", "fowl", anything()).once
-      subject.response_body_for_all("xml")
-    end
-  end
-
-  describe "#response_body_for_id" do
-    it "should use @datastore.find" do
-      subject.datastore.should_receive(:find).with("fowl", 1).once
-      subject.response_body_for_id("json", 1)
-    end
-
-    it "should format data as json" do
-      subject.should_receive(:format_as).with("json", "fowl", anything()).once
-      subject.response_body_for_id("json", 1)
-    end
-
-    it "should format data as xml" do
-      subject.should_receive(:format_as).with("xml", "fowl", anything()).once
-      subject.response_body_for_id("xml", 1)
-    end
-  end
-
   # TODO: setup tests to run against actual Rails/ActiveResource to compare values
   describe "#response_for" do
     before(:all) { RawRequest = Struct.new("Request", :method, :uri, :body, :headers) }
