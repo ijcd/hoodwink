@@ -1,13 +1,18 @@
 require File.join(File.dirname(__FILE__), '../../spec_helper.rb')
+require File.join(File.dirname(__FILE__), 'shared_examples_for_request_interception')
 
 describe Hoodwink::RequestInterceptor do
 
   subject { Hoodwink::RequestInterceptor.instance }
 
-  let(:fish_endpoint) { "http://localhost.localdomain/fish" }
-  let(:fowl_endpoint) { "http://localhost.localdomain/fowl" }
-  let(:beast_endpoint) { "http://localhost.localdomain/beast" }
+  let(:http) { Net::HTTP.new("localhost.localdomain") }
+  let(:responder) { subject.responders[fish_endpoint] }
 
+  let(:fish_endpoint)      { "http://localhost.localdomain/fish"                            }
+  let(:fowl_endpoint)      { "http://localhost.localdomain/fowl"                            }
+  let(:beast_endpoint)     { "http://localhost.localdomain/beast"                           }
+  let(:segmented_endpoint) { "http://localhost.localdomain/cats/:cat_id/dogs/:dog_id/fleas" }
+  
   before { 
     subject.disable_net_connect!
     subject.reset 
@@ -48,88 +53,82 @@ describe Hoodwink::RequestInterceptor do
     end
   end
 
-  describe "#mock_resource" do
-    before {
-      subject.mock_resource fish_endpoint
-    }
+  describe "#mock_resource without extensions" do
+     context "a normal endpoint" do
+      before { subject.mock_resource fish_endpoint }
+      let (:resource_path) { "/fish" }
 
-    let(:responder) { subject.responders[fish_endpoint] }
-    let(:http) { Net::HTTP.new("localhost.localdomain") }
-
-    shared_examples "a mocked resource" do |mimetype, extension|
-      it "should intercept index GET requests with extension \"#{extension}\" and mimetype #{mimetype.inspect}" do
-        responder.should_receive(:response_for).once.and_return(:body => {})
-        headers = mimetype.nil? ? {} : {"Accept" => mimetype}
-        http.get("/fish#{extension}", headers)
-      end
-
-      it "should intercept index POST requests with #{mimetype}" do
-        responder.should_receive(:response_for).once.and_return(:body => {})
-        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
-        http.post("/fish#{extension}", "", headers)
-      end
-
-      it "should intercept resource GET requests with extension \"#{extension}\" and mimetype #{mimetype.inspect}" do
-        responder.should_receive(:response_for).once.and_return(:body => {})
-        headers = mimetype.nil? ? {} : {"Accept" => mimetype}
-        http.get("/fish/1#{extension}", headers)
-      end
-
-      it "should intercept resource PUT requests with extension \"#{extension}\" and mimetype #{mimetype.inspect}" do
-        responder.should_receive(:response_for).once.and_return(:body => {})
-        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
-        http.put("/fish/1#{extension}", "", headers)
-      end
-
-      it "should intercept resource DELETE requests with extension \"#{extension}\" and mimetype #{mimetype.inspect}" do
-        responder.should_receive(:response_for).once.and_return(:body => {})
-        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
-        http.delete("/fish/1#{extension}", headers)
-      end
-
-      ## longer URLs ##
-
-      it "should NOT intercept index GET requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
-        responder.should_not_receive(:response_for)
-        headers = mimetype.nil? ? {} : {"Accept" => mimetype}
-        expect { http.get("/fish#{extension}/foo", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
-      end unless extension
-
-      it "should NOT intercept index POST requests with #{mimetype} for longer urls that submatch" do
-        responder.should_not_receive(:response_for)
-        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
-        expect { http.post("/fish#{extension}/foo", "", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
-      end
-
-      it "should NOT intercept resource GET requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
-        responder.should_not_receive(:response_for)
-        headers = mimetype.nil? ? {} : {"Accept" => mimetype}
-        expect { http.get("/fish/1#{extension}/foo", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
-      end
-
-      it "should NOT intercept resource PUT requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
-        responder.should_not_receive(:response_for)
-        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
-        expect { http.put("/fish/1#{extension}/foo", "", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
-      end
-
-      it "should NOT intercept resource DELETE requests with extension \"#{extension}\" and mimetype #{mimetype.inspect} for longer urls that submatch" do
-        responder.should_not_receive(:response_for)
-        headers = mimetype.nil? ? {} : {"Content-Type" => mimetype}
-        expect { http.delete("/fish/1#{extension}/foo", headers) }.should raise_error(WebMock::NetConnectNotAllowedError)
-      end
-
+      include_examples "for a mocked resource"
     end
 
-    it_behaves_like "a mocked resource", nil,                ".json"
-    it_behaves_like "a mocked resource", "*/*",              ".json"
-    it_behaves_like "a mocked resource", "application/json", ".json"
-    it_behaves_like "a mocked resource", "application/json", ""
+    # context "a segmented endpoint" do
+    #   before { subject.mock_resource segmented_endpoint }
+    #   let (:resource_path) { "/cats/25/dogs/34/fleas" }
 
-    it_behaves_like "a mocked resource", nil,                ".xml"
-    it_behaves_like "a mocked resource", "*/*",              ".xml"
-    it_behaves_like "a mocked resource", "application/xml",  ".xml"
-    it_behaves_like "a mocked resource", "application/xml",  ""
+    #   include_examples "for a mocked resource"
+    # end
   end
 
+  describe "#mock_resource with extensions" do
+    before(:all) { class ExpectedToRaise < StandardError ; end }
+
+    context "a mocked resource with extensions" do
+      before do
+        subject.mock_resource fish_endpoint do
+          def find_all ; raise ExpectedToRaise ; end
+        end
+      end
+      let (:resource_path) { "/fish" }
+      include_examples "for a mocked resource"
+    end
+
+    it "GET on collection should use find_all to get the resource" do
+      subject.mock_resource fish_endpoint do
+        def find_all ; raise ExpectedToRaise ; end
+      end
+      expect { http.get("/fish") }.should raise_error(ExpectedToRaise)
+    end
+
+    it "POST on collection should use create(hash)" do
+      subject.mock_resource fish_endpoint do
+        def create(hash) ; raise ExpectedToRaise ; end
+      end
+      expect {http.post("/fish", {})}.should raise_error(ExpectedToRaise)
+    end
+
+    it "GET on resource should use find(id) to get the resource" do
+      subject.mock_resource fish_endpoint do
+        def find(id) ; raise ExpectedToRaise ; end
+      end
+      expect { http.get("/fish/1") }.should raise_error(ExpectedToRaise)
+    end
+
+    it "PUT on resource should call update(id, hash)" do
+      subject.mock_resource fish_endpoint do
+        def update(id, hash) ; raise ExpectedToRaise ; end
+      end
+      expect { http.put("/fish/1", {}) }.should raise_error(ExpectedToRaise)
+    end
+
+    it "PUT on resource should use find(id) to get the resource" do
+      subject.mock_resource fish_endpoint do
+        def find(id) ; raise ExpectedToRaise ; end
+      end
+      expect { http.put("/fish/1", "foo") }.should raise_error(ExpectedToRaise)
+    end
+
+    it "DELETE on resource should call delete(id)" do
+      subject.mock_resource fish_endpoint do
+        def delete(id) ; raise ExpectedToRaise ; end
+      end
+      expect { http.delete("/fish/1") }.should raise_error(ExpectedToRaise)
+    end
+
+    it "DELETE on resource should use find(id) to get the resource" do
+      subject.mock_resource fish_endpoint do
+        def find(id) ; raise ExpectedToRaise ; end
+      end
+      expect { http.delete("/fish/1") }.should raise_error(ExpectedToRaise)
+    end
+  end
 end
