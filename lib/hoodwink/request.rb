@@ -3,12 +3,11 @@ module Hoodwink
     attr_reader :raw_request
     attr_reader :resource_path
 
-    def initialize(raw_request, resource_path)
+    def initialize(raw_request, resource_path_re)
       @raw_request   = raw_request
-      @resource_path = resource_path
 
-      @collection_re = %r{^#{resource_path}(\.(?<url_format>.*))?$}
-      @resource_re   = %r{^#{resource_path}/(?<id>[^.]+)(.(?<url_format>.*))?$}
+      @collection_re = %r{^#{resource_path_re}(\.(?<url_format>.*))?$}
+      @resource_re   = %r{^#{resource_path_re}/(?<id>[^.]+)(.(?<url_format>.*))?$}
     end
 
     def path

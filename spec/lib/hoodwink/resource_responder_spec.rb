@@ -36,7 +36,7 @@ describe Hoodwink do
   describe "#response_for" do
     before(:all) { RawRequest = Struct.new("Request", :method, :uri, :body, :headers) }
 
-    let(:response) { subject.response_for(request) }
+    let(:response) { subject.response_for(Hoodwink::Request.new(request, "/fowl")) }
 
     #                                            accept/
     #              method   resource   extension content-type ==>    code content-type        location

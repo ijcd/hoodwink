@@ -22,8 +22,7 @@ module Hoodwink
     # GET    "/fish/1.json", {}, @fish
     # PUT    "/fish/1.json", {}, nil, 204
     # DELETE "/fish/1.json", {}, nil, 200
-    def response_for(raw_request)
-      request = Request.new(raw_request, resource_path)
+    def response_for(request)
       datastore_proxy = datastore_proxy_class.new(@resource_name, datastore, request)
 
       case [request.request_type, request.method]
@@ -34,7 +33,7 @@ module Hoodwink
         response_body = format_as(response_format, @resource_name.singularize, datastore_proxy.find_all)
         response_for_get(response_body, response_format)
 
-      # TODO: rename data
+      # TODO: resource_location generation for segmented routes
       when [:collection, :post]
         posted_resource = request.resource
         # create(resource_name, hash)
@@ -44,7 +43,6 @@ module Hoodwink
         response_body = format_as(response_format, @resource_name.singularize, new_resource)
         response_for_nonget(request, resource_location, response_body)
 
-      # TODO: rename data
       when [:resource, :get]
         resource = datastore_proxy.find(request.resource_id)
         response_body = format_as(request.response_format, @resource_name.singularize, resource)
@@ -66,7 +64,7 @@ module Hoodwink
         response_for_nonget(request, resource_location, nil)
 
       else
-        raise UnableToHandleRequest, "Could not handle request for #{request.method} on #{path}"
+        raise UnableToHandleRequest, "Could not handle request for #{request.method} on #{request.path}"
       end
 
     rescue RecordNotFound

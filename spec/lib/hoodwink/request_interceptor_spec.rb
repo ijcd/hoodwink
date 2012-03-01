@@ -6,7 +6,6 @@ describe Hoodwink::RequestInterceptor do
   subject { Hoodwink::RequestInterceptor.instance }
 
   let(:http) { Net::HTTP.new("localhost.localdomain") }
-  let(:responder) { subject.responders[fish_endpoint] }
 
   let(:fish_endpoint)      { "http://localhost.localdomain/fish"                            }
   let(:fowl_endpoint)      { "http://localhost.localdomain/fowl"                            }
@@ -54,19 +53,19 @@ describe Hoodwink::RequestInterceptor do
   end
 
   describe "#mock_resource without extensions" do
-     context "a normal endpoint" do
+    context "a normal endpoint" do
       before { subject.mock_resource fish_endpoint }
-      let (:resource_path) { "/fish" }
-
+      let(:resource_path) { "/fish" }
+      let(:responder)     { subject.responders[fish_endpoint] }
       include_examples "for a mocked resource"
     end
 
-    # context "a segmented endpoint" do
-    #   before { subject.mock_resource segmented_endpoint }
-    #   let (:resource_path) { "/cats/25/dogs/34/fleas" }
-
-    #   include_examples "for a mocked resource"
-    # end
+    context "a segmented endpoint" do
+      before { subject.mock_resource segmented_endpoint }
+      let(:resource_path) { "/cats/25/dogs/34/fleas" }
+      let(:responder)     { subject.responders[segmented_endpoint] }
+      include_examples "for a mocked resource"
+    end
   end
 
   describe "#mock_resource with extensions" do
@@ -78,7 +77,8 @@ describe Hoodwink::RequestInterceptor do
           def find_all ; raise ExpectedToRaise ; end
         end
       end
-      let (:resource_path) { "/fish" }
+      let(:resource_path) { "/fish" }
+      let(:responder)     { subject.responders[fish_endpoint] }
       include_examples "for a mocked resource"
     end
 

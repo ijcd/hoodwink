@@ -44,36 +44,45 @@ module Hoodwink
         end
       end
 
+      # take any segments out of the path
+      segments = resource_uri.path.scan(%r{(?!/)[^/]+})
+      segment_res = segments.map do |s|
+        if s.match(/:(?<var>.+)/) 
+          "(?<#{$~[:var]}>[^/]+)"
+        else
+          s
+        end
+      end
+      resource_path_re = "/" + segment_res.join("/")
+
       # create a resource responder
-      responder = ResourceResponder.new(resource_uri.path, resource_name.singularize, datastore, datastore_proxy_class)
+      responder = ResourceResponder.new(resource_path_re, resource_name.singularize, datastore, datastore_proxy_class)
 
       # store the responder
       responders[resource_url] = responder
 
       # wire requests to the responder
-      SUPPORTED_FORMATS.each do |mimetype, format|
-        stub_request_for(responder, resource_uri, "*/*",    ".#{format}")
-        stub_request_for(responder, resource_uri, mimetype, ".#{format}")
-        stub_request_for(responder, resource_uri, mimetype, "")
+      SUPPORTED_FORMATS.each do |mimetype, extension|
+        stub_request_for(responder, resource_uri, resource_path_re, "*/*",    ".#{extension}")
+        stub_request_for(responder, resource_uri, resource_path_re, mimetype, ".#{extension}")
+        stub_request_for(responder, resource_uri, resource_path_re, mimetype, "")
       end
     end
 
     private
 
-    def stub_request_for(responder, resource_uri, mimetype, extension)
-      resource_path = resource_uri.path
+    def stub_request_for(responder, resource_uri, resource_path_re, mimetype, extension)
       resource_host = resource_uri.host
-      resource_port = resource_uri.port.nil? ? "": ":#{resource_uri.port}"
+      resource_port = [nil, 80].include?(resource_uri.port) ? "": ":#{resource_uri.port}"
 
       # TODO: add tests for username/password
       # TODO: add tests for port
       # TODO: add tests for port :80 same as nil
-      collection_re = %r{^https?://(.*@)?#{resource_host}#{resource_port}#{resource_path}#{extension}(\?(?<params>.*))?$} 
-      resource_re =   %r{^https?://(.*@)?#{resource_host}#{resource_port}#{resource_path}/([^./]+)#{extension}(\?(?<params>.*))?$}
+      collection_re = %r{^https?://(.*@)?#{resource_host}#{resource_port}#{resource_path_re}#{extension}(\?(?<params>.*))?$} 
+      resource_re =   %r{^https?://(.*@)?#{resource_host}#{resource_port}#{resource_path_re}/([^./]+)#{extension}(\?(?<params>.*))?$}
 
-      content_type_hash = mimetype.empty?
-
-      response = Proc.new do |request| 
+      response = Proc.new do |raw_request| 
+        request = Request.new(raw_request, resource_path_re)
         responder.response_for(request)#.tap {|r| pp r}
       end
 
