@@ -64,10 +64,6 @@ module Hoodwink
       model_for(model_name).create!(params)
     end
 
-    def update(model_name, model_id, params={})
-      params.stringify_keys!
-    end
-
     def delete(model_name, model_id)
     end
 

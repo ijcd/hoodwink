@@ -15,6 +15,7 @@ describe Hoodwink do
 
   let(:body_xml)  { %{<fowl><color>red</color></fowl>} }
   let(:body_json) { %{{"fowl":{"color":"red"}}} }
+  let(:found)     { double("found") }
 
   describe "#format_as" do
     it "should format as json" do
@@ -153,13 +154,15 @@ describe Hoodwink do
 
         when [:put, :resource]
           it "should call datastore.update at some point" do
-            subject.datastore.should_receive(:update)
+            subject.should_receive(:find).and_return(found)
+            found.should_receive(:update_attributes).exactly(:once)
             response
           end
 
         when [:delete, :resource]
           it "should call datastore.delete at some point" do
-            subject.datastore.should_receive(:delete)
+            subject.should_receive(:find).and_return(found)
+            found.should_receive(:destroy).exactly(:once)
             response
           end
 

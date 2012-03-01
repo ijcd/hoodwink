@@ -28,43 +28,38 @@ module Hoodwink
 
       when [:collection, :get]
         response_format = request.response_format
-        # find_all
-        data = @datastore.find_all(@resource_name)
-        # format
-        response_body = format_as(response_format, @resource_name.singularize, data)
+        # find_all(resource_name)
+        response_body = format_as(response_format, @resource_name.singularize, find_all)
         response_for_get(response_body, response_format)
 
+      # TODO: rename data
       when [:collection, :post]
         posted_resource = request.resource
-        # create
+        # create(resource_name, hash)
         new_resource = @datastore.create(resource_name, posted_resource)
         resource_location = "#{resource_path}/#{new_resource.id}"
         response_format = request.response_format
-        # find
-        data = @datastore.find(@resource_name, new_resource.id)
-        # format
-        response_body = format_as(response_format, @resource_name.singularize, data)
+        response_body = format_as(response_format, @resource_name.singularize, new_resource)
         response_for_nonget(request, resource_location, response_body)
 
+      # TODO: rename data
       when [:resource, :get]
-        # find
-        data = @datastore.find(@resource_name, request.resource_id)
-        # format
-        response_body = format_as(request.response_format, @resource_name.singularize, data)
+        resource = find(request.resource_id)
+        response_body = format_as(request.response_format, @resource_name.singularize, resource)
         response_for_get(response_body, request.response_format)
 
       when [:resource, :put]
         resource = request.resource
         resource_id = request.resource_id
         resource_location = "#{resource_path}/#{resource_id}"
-        # update
-        @datastore.update(resource_name, resource_id, resource)
+        # update(resource_name, id, hash)
+        update(resource_id, resource)
         response_for_nonget(request, resource_location, nil)
 
       when [:resource, :delete]
         resource_location = resource_path
-        # delete
-        @datastore.delete(resource_name, request.resource_id)
+        # delete(resource_name, id)
+        delete(request.resource_id)
         response_format = request.response_format
         response_for_nonget(request, resource_location, nil)
 
@@ -74,6 +69,26 @@ module Hoodwink
 
     rescue RecordNotFound
       response_for_404
+    end
+
+    def find_all
+      @datastore.find_all(@resource_name)
+    end
+
+    def find(id)
+      @datastore.find(@resource_name, id)
+    end
+
+    def create(resource)
+      @datastore.create(@resource_name, resource_hash)
+    end
+
+    def update(id, resource_hash)
+      find(id).update_attributes(resource_hash)
+    end
+
+    def delete(id)
+      find(id).destroy
     end
 
     def response_for_404
