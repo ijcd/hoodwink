@@ -63,6 +63,7 @@ module Hoodwink
     end
 
     def resource
+      return "" unless body_content_type
       format = ActiveResource::Formats[body_content_type.to_sym]
       format.decode(body)
     end

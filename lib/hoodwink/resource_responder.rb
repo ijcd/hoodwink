@@ -1,14 +1,15 @@
 module Hoodwink
-
   class ResourceResponder
     attr_reader :resource_path
     attr_reader :resource_name
     attr_reader :datastore
+    attr_reader :datastore_proxy_class
 
-    def initialize(resource_path, resource_name, datastore)
+    def initialize(resource_path, resource_name, datastore, datastore_proxy_class=nil)
       @resource_path = resource_path
       @resource_name = resource_name.to_s
       @datastore = datastore
+      @datastore_proxy_class = datastore_proxy_class || Hoodwink::DataStoreProxy
     end
 
     def format_as(format, root, data)
@@ -23,20 +24,21 @@ module Hoodwink
     # DELETE "/fish/1.json", {}, nil, 200
     def response_for(raw_request)
       request = Request.new(raw_request, resource_path)
+      datastore_proxy = datastore_proxy_class.new(@resource_name, datastore, request)
 
       case [request.request_type, request.method]
 
       when [:collection, :get]
         response_format = request.response_format
         # find_all(resource_name)
-        response_body = format_as(response_format, @resource_name.singularize, find_all)
+        response_body = format_as(response_format, @resource_name.singularize, datastore_proxy.find_all)
         response_for_get(response_body, response_format)
 
       # TODO: rename data
       when [:collection, :post]
         posted_resource = request.resource
         # create(resource_name, hash)
-        new_resource = @datastore.create(resource_name, posted_resource)
+        new_resource = datastore_proxy.create(posted_resource)
         resource_location = "#{resource_path}/#{new_resource.id}"
         response_format = request.response_format
         response_body = format_as(response_format, @resource_name.singularize, new_resource)
@@ -44,7 +46,7 @@ module Hoodwink
 
       # TODO: rename data
       when [:resource, :get]
-        resource = find(request.resource_id)
+        resource = datastore_proxy.find(request.resource_id)
         response_body = format_as(request.response_format, @resource_name.singularize, resource)
         response_for_get(response_body, request.response_format)
 
@@ -53,13 +55,13 @@ module Hoodwink
         resource_id = request.resource_id
         resource_location = "#{resource_path}/#{resource_id}"
         # update(resource_name, id, hash)
-        update(resource_id, resource)
+        datastore_proxy.update(resource_id, resource)
         response_for_nonget(request, resource_location, nil)
 
       when [:resource, :delete]
         resource_location = resource_path
         # delete(resource_name, id)
-        delete(request.resource_id)
+        datastore_proxy.delete(request.resource_id)
         response_format = request.response_format
         response_for_nonget(request, resource_location, nil)
 
@@ -69,26 +71,6 @@ module Hoodwink
 
     rescue RecordNotFound
       response_for_404
-    end
-
-    def find_all
-      @datastore.find_all(@resource_name)
-    end
-
-    def find(id)
-      @datastore.find(@resource_name, id)
-    end
-
-    def create(resource)
-      @datastore.create(@resource_name, resource_hash)
-    end
-
-    def update(id, resource_hash)
-      find(id).update_attributes(resource_hash)
-    end
-
-    def delete(id)
-      find(id).destroy
     end
 
     def response_for_404
@@ -129,6 +111,5 @@ module Hoodwink
     def body_for_redirect(url)
       %{<html><body>You are being <a href="#{url}">redirected</a>.</body></html>}
     end
-
   end
 end

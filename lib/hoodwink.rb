@@ -12,6 +12,7 @@ module Hoodwink
   autoload :RequestInterceptor, "hoodwink/request_interceptor"
   autoload :ResourceResponder,  "hoodwink/resource_responder"
   autoload :DataStore,          "hoodwink/data_store"
+  autoload :DataStoreProxy,     "hoodwink/data_store_proxy"
   autoload :Resource,           "hoodwink/resource"
   autoload :Request,            "hoodwink/request"
 

@@ -24,7 +24,7 @@ module Hoodwink
       @datastore ||= DataStore.new
     end
 
-    def mock_resource(resource_url, resource_name=nil)
+    def mock_resource(resource_url, resource_name=nil, &block_extension)
       # guess resource_name from url if not given
       unless resource_name
         resource_uri = URI.parse(resource_url)        
@@ -32,9 +32,20 @@ module Hoodwink
         resource_name = m[:resource_name]
       end
 
-      # TODO: figure our plural/singular for resource_name
+      # setup DataStoreProxy with extension methods if necessary
+      if block_extension
+        if Module === block_extension 
+          extension_module = block_extension
+        else
+          extension_module = Module.new(&block_extension)
+        end
+        datastore_proxy_class = Class.new(DataStoreProxy) do
+          include extension_module
+        end
+      end
+
       # create a resource responder
-      responder = ResourceResponder.new(resource_uri.path, resource_name.singularize, datastore)
+      responder = ResourceResponder.new(resource_uri.path, resource_name.singularize, datastore, datastore_proxy_class)
 
       # store the responder
       responders[resource_url] = responder
