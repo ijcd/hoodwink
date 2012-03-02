@@ -9,21 +9,22 @@ module Hoodwink
       @datastore = datastore
       @request = request
     end
+
+    def filter_by(model)
+      model
+    end
     
-    def segment_params
+    def segments
       request.segment_params
     end
 
-    def url_params
-      request.uri.query.inject({}) {|hsh,i| sides=i.split("="); hsh[sides[0]]=sides[1]; hsh}
-    end
-
     def find_all
-      @datastore.find_all(@resource_name)
+      @datastore.find_all(@resource_name).select{|m| filter_by(m)}
     end
 
     def find(id)
-      @datastore.find(@resource_name, id)
+      found = @datastore.find(@resource_name, id)
+      filter_by(found) ? found : nil
     end
 
     def create(resource_hash)
