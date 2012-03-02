@@ -112,7 +112,7 @@ describe Hoodwink do
             body = nil
           end
 
-          RawRequest.new(method, URI.parse(url), body, headers)
+          RawRequest.new(method, Addressable::URI.parse(url), body, headers)
         }
 
         it "should return status #{response_code}" do

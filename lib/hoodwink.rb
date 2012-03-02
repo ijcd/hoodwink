@@ -3,6 +3,7 @@ require "active_support/core_ext/string"
 require "active_support/core_ext/class"
 require "active_resource"
 require "webmock"
+require "addressable/uri"
 require "supermodel"
 
 require "hoodwink/version"

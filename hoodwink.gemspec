@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency "activesupport", "> 3.0.0"
   s.add_runtime_dependency "activeresource"
+  s.add_runtime_dependency "addressable"
   s.add_runtime_dependency "webmock"
 
   # TODO: fix supermodel dependency on activemodel ~> 3.0.0 so we can move this to gemspec

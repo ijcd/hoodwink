@@ -27,7 +27,7 @@ module Hoodwink
     def mock_resource(resource_url, resource_name=nil, &block_extension)
       # guess resource_name from url if not given
       unless resource_name
-        resource_uri = URI.parse(resource_url)        
+        resource_uri = Addressable::URI.parse(resource_url)        
         m = %r{^.*(/(?<resource_name>.*?))$}.match(resource_uri.path)
         resource_name = m[:resource_name]
       end

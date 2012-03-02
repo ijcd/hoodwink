@@ -14,6 +14,10 @@ module Hoodwink
       request.segment_params
     end
 
+    def url_params
+      request.uri.query.inject({}) {|hsh,i| sides=i.split("="); hsh[sides[0]]=sides[1]; hsh}
+    end
+
     def find_all
       @datastore.find_all(@resource_name)
     end
