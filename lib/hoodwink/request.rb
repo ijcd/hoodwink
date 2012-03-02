@@ -1,10 +1,11 @@
 module Hoodwink
   class Request
     attr_reader :raw_request
-    attr_reader :resource_path
+    attr_reader :resource_path_re
 
     def initialize(raw_request, resource_path_re)
       @raw_request   = raw_request
+      @resource_path_re = resource_path_re
 
       @collection_re = %r{^#{resource_path_re}(\.(?<url_format>.*))?$}
       @resource_re   = %r{^#{resource_path_re}/(?<id>[^.]+)(.(?<url_format>.*))?$}
@@ -43,6 +44,10 @@ module Hoodwink
       path.match(@resource_re)
     end
 
+    def segment_params
+      Request.extract_segment_params(path, resource_path_re)
+    end
+
     def request_type
       return :collection if collection_request?
       return :resource if resource_request?
@@ -75,6 +80,34 @@ module Hoodwink
       end
     end
 
+    def self.path_to_segments_re(path)
+      segments_to_re(path_to_segments(path))
+    end
+    
+    def self.path_to_segments(path)
+      path.scan(%r{(?!/)[^/]+})
+    end
+
+    def self.segments_to_re(segments)
+      Regexp.new(["", 
+                  segments.map do |s|
+                    if s.match(/:(?<var>.+)/) 
+                      "(?<#{$~[:var]}>[^/]+)"
+                    else
+                      s
+                    end
+                  end
+                 ].join("/")
+               )
+    end
+
+    def self.extract_segment_params(path, path_re)
+      if m = path.match(path_re)
+        HashWithIndifferentAccess[m.names.zip(m.captures)]
+      else
+        {}
+      end
+    end
+
   end
 end
-

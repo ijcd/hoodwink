@@ -45,15 +45,7 @@ module Hoodwink
       end
 
       # take any segments out of the path
-      segments = resource_uri.path.scan(%r{(?!/)[^/]+})
-      segment_res = segments.map do |s|
-        if s.match(/:(?<var>.+)/) 
-          "(?<#{$~[:var]}>[^/]+)"
-        else
-          s
-        end
-      end
-      resource_path_re = "/" + segment_res.join("/")
+      resource_path_re = Request.path_to_segments_re(resource_uri.path)
 
       # create a resource responder
       responder = ResourceResponder.new(resource_path_re, resource_name.singularize, datastore, datastore_proxy_class)

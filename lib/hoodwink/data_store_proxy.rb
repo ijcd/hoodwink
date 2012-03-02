@@ -9,6 +9,10 @@ module Hoodwink
       @datastore = datastore
       @request = request
     end
+    
+    def segment_params
+      request.segment_params
+    end
 
     def find_all
       @datastore.find_all(@resource_name)
