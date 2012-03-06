@@ -14,8 +14,12 @@ module Hoodwink
 
   module Models
     # we'll stuff SuperModels into here
+    def self.const_missing(name)
+      const_set(name, Class.new(SuperModel::Base))
+    end
   end
 
+  # TODO: maybe hide datastore.create(:foo, ...) type methods using proxy models from const_set in Hoodwink::Models that already know about the datastore... then they just be refernce directly
   # TODO: break SuperModel out into an adapter so we can have other db types
   # TODO: use method_missing or delegation to send into SuperModel
   class DataStore
@@ -35,10 +39,6 @@ module Hoodwink
         klass.delete_all # clear out this model since it's the first time we've seen it.
         @models[model_name] = klass
       end
-    rescue NameError
-      klass = Class.new(SuperModel::Base)
-      Hoodwink::Models.const_set(model_name, klass)
-      retry
     end
     
     def find(model_name, id)
