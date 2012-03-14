@@ -58,7 +58,15 @@ module Hoodwink
   end
 
   def self.reset
+    reset_mocks
+    reset_datastore
+  end
+
+  def self.reset_mocks
     interceptor.reset
+  end
+
+  def self.reset_datastore
     datastore.clear!
   end
 
