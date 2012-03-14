@@ -5,8 +5,8 @@ require "active_resource"
 require "webmock"
 require "addressable/uri"
 require "supermodel"
-
 require "hoodwink/version"
+#require "hoodwink/rails"
 
 module Hoodwink
 
@@ -34,6 +34,10 @@ module Hoodwink
 
   # Raised when Hoodwink receives a request it cannot handle
   class UnableToHandleRequest < HoodwinkError ; end
+
+  # Raised when Hoodwink cannot find a given model
+  class ModelUnknown < HoodwinkError ; end
+
   
   def self.interceptor
     RequestInterceptor.instance
@@ -58,17 +62,11 @@ module Hoodwink
     datastore.clear!
   end
 
-  def self.timed(msg)
-    start = Time.now.to_f
-    yield
-    pp "#{msg.upcase}: %f" % (Time.now.to_f - start)
-  end
-
   # TODO: only reload if files have changed
   def self.reload
-    timed("reset") {reset}
-    timed("find_mocks") {find_mocks}
-    timed("find_data") {find_data}
+    reset
+    find_mocks
+    find_data
   end
 
   def self.mock_resource(resource_url, resource_name=nil, &block)
@@ -77,25 +75,25 @@ module Hoodwink
 
   class << self
     # An Array of strings specifying locations that should be searched for
-    # mock definitions. By default, Hoodwink will attempt to require
-    # "hoodwink/mocks".
-    attr_accessor :mock_file_paths
-
-    # An Array of strings specifying locations that should be searched for
     # data definitions. By default, Hoodwink will attempt to require
     # "hoodwink/data".
     attr_accessor :data_file_paths
+
+    # An Array of strings specifying locations that should be searched for
+    # mock definitions. By default, Hoodwink will attempt to require
+    # "hoodwink/mocks".
+    attr_accessor :mock_file_paths
   end
 
-  self.mock_file_paths = %w(hoodwink/mocks)
   self.data_file_paths = %w(hoodwink/data)
-
-  def self.find_mocks #:nodoc:
-    load_files(Array.wrap(mock_file_paths))
-  end
+  self.mock_file_paths = %w(hoodwink/mocks)
 
   def self.find_data #:nodoc:
     load_files(Array.wrap(data_file_paths))
+  end
+
+  def self.find_mocks #:nodoc:
+    load_files(Array.wrap(mock_file_paths))
   end
 
   private
@@ -114,4 +112,3 @@ module Hoodwink
     end
   end
 end
-

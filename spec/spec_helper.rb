@@ -4,7 +4,7 @@ require 'bundler/setup'
 require 'wrong'
 include Wrong
 
-require 'hoodwink' # and any other gems you need
+require 'hoodwink'
 
 RSpec.configure do |config|
   # some (optional) config here

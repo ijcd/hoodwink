@@ -13,9 +13,26 @@
 module Hoodwink
 
   module Models
-    # we'll stuff SuperModels into here
+    def self.models
+      @models ||= []
+    end
+
+    def self.reset!
+      models.each do |model| 
+        model.delete_all
+        model_name = model.name.split('::').last
+        #pp "Removing #{model.pretty_inspect}: #{model.object_id}"
+        remove_const(model_name)
+      end
+      models.clear
+    end
+
+    # we'll stuff SuperModels into here (they'll pop into existence on reference
     def self.const_missing(name)
-      const_set(name, Class.new(SuperModel::Base))
+      model = const_set(name, Class.new(SuperModel::Base))
+      models << model
+      #pp "Loaded #{model.pretty_inspect}: #{model.object_id}"
+      model
     end
   end
 
@@ -23,21 +40,15 @@ module Hoodwink
   # TODO: break SuperModel out into an adapter so we can have other db types
   # TODO: use method_missing or delegation to send into SuperModel
   class DataStore
-    attr_reader :models
-
-    def initialize
-      @models = {}
-    end
 
     # lookup the SuperModel, retry after creating if not found
     def model_for(sym)
       model_name = sym.to_s.classify
-      if klass = @models[model_name]
-        klass
+      model_full_name = "Hoodwink::Models::#{model_name}"
+      if defined?(model_full_name.constantize)
+        model_full_name.constantize
       else
-        klass = "Hoodwink::Models::#{model_name}".constantize
-        klass.delete_all # clear out this model since it's the first time we've seen it.
-        @models[model_name] = klass
+        raise ModelUnknown, model_name
       end
     end
     
@@ -68,16 +79,16 @@ module Hoodwink
     end
 
     def clear!
-      @models.values.each {|m| m.delete_all }
+      Models.reset!
     end
 
     def inspect
       @buf = []
-      @models.each do |model_name, model|
-        models = model.all
-        @buf << "#{model_name} (#{models.count}):"
-        models.each do |m|
-          @buf << "  #{m.inspect}"
+      Models.models.each do |model|
+        records = model.all
+        @buf << "#{model.name} (#{records.count}):"
+        records.each do |r|
+          @buf << "  #{r.inspect}"
         end
       end
       @buf.join("\n")

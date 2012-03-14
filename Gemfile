@@ -9,7 +9,8 @@ group :development, :test do
 end
 
 # TODO: fix supermodel dependency on activemodel ~> 3.0.0 so we can move this to gemspec
-gem 'supermodel', :path => '~/work/github/supermodel'
+#gem 'supermodel', :path => '~/work/github/supermodel'
+gem 'supermodel', :git => "https://github.com/maccman/supermodel.git"
 
 group :development do
   #gem 'ruby_gntp'
