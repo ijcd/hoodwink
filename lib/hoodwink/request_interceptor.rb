@@ -3,12 +3,12 @@ module Hoodwink
     include Singleton
     include WebMock::API
 
-    def allow_net_connect!
-      WebMock.allow_net_connect!
+    def allow_net_connect!(*args)
+      WebMock.allow_net_connect!(*args)
     end
 
-    def disable_net_connect!
-      WebMock.disable_net_connect!
+    def disable_net_connect!(*args)
+      WebMock.disable_net_connect!(*args)
     end
 
     def responders
@@ -78,8 +78,8 @@ module Hoodwink
 
       response = Proc.new do |raw_request| 
         request = Request.new(raw_request, resource_path_re)
-        pp "REQUEST:", request if Hoodwink.debug
-        responder.response_for(request).tap {|r| pp "RESPONSE:", r if Hoodwink.debug }
+        pp "REQUEST:", request if Hoodwink.debug?
+        responder.response_for(request).tap {|r| pp "RESPONSE:", r if Hoodwink.debug? }
       end
 
       # INDEX

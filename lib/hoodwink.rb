@@ -38,7 +38,7 @@ module Hoodwink
   # Raised when Hoodwink cannot find a given model
   class ModelUnknown < HoodwinkError ; end
 
-  def self.debug
+  def self.debug?
     ENV['HOODWINK_DEBUG']
   end
 
