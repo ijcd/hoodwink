@@ -22,6 +22,7 @@ module Hoodwink
       @datastore.find_all(@resource_name).select{|m| filter_by(m)}
     end
 
+    # TODO: perhaps find() should use find_all()
     def find(id)
       found = @datastore.find(@resource_name, id)
       filter_by(found) ? found : nil

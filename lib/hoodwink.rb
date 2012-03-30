@@ -38,7 +38,10 @@ module Hoodwink
   # Raised when Hoodwink cannot find a given model
   class ModelUnknown < HoodwinkError ; end
 
-  
+  def self.debug
+    ENV['HOODWINK_DEBUG']
+  end
+
   def self.interceptor
     RequestInterceptor.instance
   end
@@ -70,9 +73,28 @@ module Hoodwink
     datastore.clear!
   end
 
-  # TODO: only reload if files have changed
-  def self.reload
+  def self.banner(msg)
+    puts "=" * 80
+    puts msg
+    puts "=" * 80
+  end
+
+  # only reloads if files have changed
+  def self.reload(&block)
+    if data_changed?
+      banner "DATA CHANGED"
+      reload!(&block)
+    elsif mocks_changed?
+      banner "MOCKS CHANGED"
+      reset_mocks
+      find_mocks
+    end
+  end
+
+  # unconditionally reloads everything
+  def self.reload!
     reset
+    yield if block_given?
     find_mocks
     find_data
   end
@@ -96,27 +118,54 @@ module Hoodwink
   self.data_file_paths = %w(hoodwink/data)
   self.mock_file_paths = %w(hoodwink/mocks)
 
-  def self.find_data #:nodoc:
-    load_files(Array.wrap(data_file_paths))
+  def self.find_data
+    @last_data_load = Time.now
+    load_files(data_file_paths)
   end
 
-  def self.find_mocks #:nodoc:
-    load_files(Array.wrap(mock_file_paths))
+  def self.find_mocks
+    @last_mock_load = Time.now
+    load_files(mock_file_paths)
+  end
+
+  def self.mocks_changed?
+    @last_mock_load ||= Time.new(0)
+    @last_mock_load < collect_files(mock_file_paths).map{|f| File.stat(f).mtime}.max 
+  end
+
+  # TODO: externalize dependency on FactoryGirl paths here (pass them in from tne initializer)
+  def self.data_changed?
+    @last_data_load ||= Time.new(0)
+    @last_data_load < (collect_files(data_file_paths) + collect_files(FactoryGirl.definition_file_paths)).map{|f| File.stat(f).mtime}.max 
   end
 
   private
 
-  def self.load_files(root_paths) #:nodoc:
-    absolute_root_paths = root_paths.map {|path| File.expand_path(path) }
+  def self.load_files(root_paths)
+    collect_files(root_paths).each {|f| 
+      banner "LOADING: #{f}"
+      load(f)
+    }
+  end
+
+  def self.absolute_paths(paths)
+    Array.wrap(paths).map {|path| File.expand_path(path) }
+  end
+
+  def self.collect_files(root_paths)
+    @files = []
+    absolute_root_paths = absolute_paths(root_paths)
     absolute_root_paths.uniq.each do |path|
-      if File.directory? path
+      if File.directory?(path)
         Dir[File.join(path, '**', '*.rb')].sort.each do |file|
-          load file
+          @files << file
         end
       else
-        load("#{path}") if File.file?("#{path}")
-        load("#{path}.rb") if File.file?("#{path}.rb")
+        @files << (path)         if File.file?(path)
+        @files << (path + ".rb") if File.file?(path + ".rb")
       end
     end
+    @files
   end
+
 end

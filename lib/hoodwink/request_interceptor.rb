@@ -25,11 +25,14 @@ module Hoodwink
     end
 
     def mock_resource(resource_url, resource_name=nil, &block_extension)
+      resource_uri = Addressable::URI.parse(resource_url)        
+
       # guess resource_name from url if not given
       unless resource_name
-        resource_uri = Addressable::URI.parse(resource_url)        
         m = %r{^.*(/(?<resource_name>.*?))$}.match(resource_uri.path)
         resource_name = m[:resource_name]
+      else
+        resource_name = resource_name.to_s
       end
 
       # setup DataStoreProxy with extension methods if necessary
@@ -75,7 +78,8 @@ module Hoodwink
 
       response = Proc.new do |raw_request| 
         request = Request.new(raw_request, resource_path_re)
-        responder.response_for(request)#.tap {|r| pp r}
+        pp "REQUEST:", request if Hoodwink.debug
+        responder.response_for(request).tap {|r| pp "RESPONSE:", r if Hoodwink.debug }
       end
 
       # INDEX
