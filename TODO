@@ -4,3 +4,4 @@
 # TODO: custom mocks
 # TODO: REST validation
 # TODO: Convert "You can stub this request with the following snippet:" from WebMock into something we can do
+# TODO: allow matching tail segment as action name: stub_request(:get, "/^https?:\/\/(.*@)?serve.offerengine.com:3001(?-mix:\/api\/v2\/coupons\/(?<coupon_id>[^\/]+)\/(?<dothis>[^\/]+))(\?(?<params>.*))?$/")

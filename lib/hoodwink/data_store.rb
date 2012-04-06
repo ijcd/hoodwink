@@ -52,9 +52,14 @@ module Hoodwink
       end
     end
     
+    # try as original, then as integer
     def find(model_name, id)
-      id = Integer(id) rescue id
-      model_for(model_name).find(id)
+      begin
+        model_for(model_name).find(id)
+      rescue SuperModel::UnknownRecord => e
+        id = Integer(id) rescue id
+        model_for(model_name).find(id)
+      end
     rescue SuperModel::UnknownRecord => e
       raise RecordNotFound, e.message
     end
