@@ -5,7 +5,7 @@ inspired by Dupe, but takes a different approach. Hoodwink uses
 SuperModel for the database backend, and WebMock for the HTTP
 interception layer. This allows it to work without ActiveResource,
 though it works perfectly fine with it as well. Hoodwink also
-leverages object factories like FactoryGirl, rather than create it's
+leverages object factories like FactoryGirl, rather than create its
 own thing.
 
 Features:
